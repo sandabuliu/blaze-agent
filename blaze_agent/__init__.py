@@ -2,16 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import os
+import datetime
+import datashape
 from blaze.utils import available_memory
 from blaze.dispatch import dispatch
 from blaze.expr.collections import Expr
 from blaze import resource, discover, convert, DataFrame, odo, chunks
-
-try:
-    from agent import source, Agent
-except ImportError:
-    raise Exception('Please install python-agent by '
-                    'pip install git+https://github.com/sandabuliu/python-agent.git')
 
 
 __author__ = 'tong'
@@ -31,6 +27,12 @@ class AGENT(object):
         return self.uri[6:]
 
     def agent(self, chunkno=0, chunksize=DEFAULT_CHUNKSIZE):
+        try:
+            from agent import source, Agent
+        except ImportError:
+            raise Exception('Please install python-agent by '
+                            'pip install git+https://github.com/sandabuliu/python-agent.git')
+
         if chunkno > 0:
             startline = chunksize * chunkno
         elif chunkno < 0:
@@ -67,8 +69,15 @@ def convert_agent(agt, **kwargs):
 
 @discover.register(AGENT)
 def discover_deque(agt, **kwargs):
-    for i in agt.agent():
-        return discover([i])
+    type_map = {
+        'date': datetime.datetime.now(),
+        'number': 0.0,
+        'string': 'abc'
+    }
+
+    fieldtypes = agt.agent().parser.fieldtypes
+    dtype = discover([{n: type_map.get(t) for n, t in fieldtypes.items()}])
+    return datashape.var * dtype.measure
 
 
 @dispatch(Expr, AGENT)
