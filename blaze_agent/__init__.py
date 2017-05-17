@@ -68,7 +68,7 @@ def convert_agent(agt, **kwargs):
 
 
 @discover.register(AGENT)
-def discover_deque(agt, **kwargs):
+def discover_agent(agt, **kwargs):
     type_map = {
         'date': datetime.datetime.now(),
         'number': 0.0,
@@ -94,7 +94,10 @@ def pre_compute(expr, data, **kwargs):
         return odo(data, DataFrame, dshape=leaf.dshape, **kwargs)
 
 
-@resource.register('agent:.+')
-def resource_agent(uri, **kwargs):
-    return AGENT(uri, **kwargs)
+def register(uri='agent:.+', priority=12):
+    from odo.convert import ooc_types
 
+    @resource.register(uri, priority=priority)
+    def resource_agent(uri, **kwargs):
+        return AGENT(uri, **kwargs)
+    ooc_types.add(AGENT)
